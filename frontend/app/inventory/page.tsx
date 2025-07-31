@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { AlertTriangle, Package, DollarSign, BarChart3, Download, Bell } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,127 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Alert as UIAlert, AlertDescription as UIDescription, AlertTitle as UITitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
-
-interface InventoryItem {
-  id: string
-  name: string
-  sku: string
-  category: string
-  currentStock: number
-  minStock: number
-  maxStock: number
-  price: number
-  value: number
-  lastUpdated: string
-  status: "healthy" | "low" | "critical" | "overstock"
-}
-
-interface InventoryAlert {
-  id: string
-  type: "low-stock" | "out-of-stock" | "overstock"
-  message: string
-  productId: string
-  severity: "high" | "medium" | "low"
-  timestamp: string
-}
+import { useInventory } from "@/hooks/useInventory"
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>([])
-  const [alerts, setAlerts] = useState<InventoryAlert[]>([])
-
-  // Sample data
-  useEffect(() => {
-    const sampleInventory: InventoryItem[] = [
-      {
-        id: "1",
-        name: "Wireless Headphones",
-        sku: "WH-001",
-        category: "Electronics",
-        currentStock: 25,
-        minStock: 10,
-        maxStock: 100,
-        price: 99.99,
-        value: 2499.75,
-        lastUpdated: "2024-01-15",
-        status: "healthy",
-      },
-      {
-        id: "2",
-        name: "Coffee Mug",
-        sku: "CM-002",
-        category: "Kitchen",
-        currentStock: 5,
-        minStock: 15,
-        maxStock: 50,
-        price: 12.99,
-        value: 64.95,
-        lastUpdated: "2024-01-14",
-        status: "low",
-      },
-      {
-        id: "3",
-        name: "Notebook",
-        sku: "NB-003",
-        category: "Office",
-        currentStock: 0,
-        minStock: 20,
-        maxStock: 200,
-        price: 8.99,
-        value: 0,
-        lastUpdated: "2024-01-13",
-        status: "critical",
-      },
-      {
-        id: "4",
-        name: "USB Cable",
-        sku: "UC-004",
-        category: "Electronics",
-        currentStock: 150,
-        minStock: 30,
-        maxStock: 100,
-        price: 15.99,
-        value: 2398.5,
-        lastUpdated: "2024-01-15",
-        status: "overstock",
-      },
-    ]
-
-    const sampleAlerts: InventoryAlert[] = [
-      {
-        id: "1",
-        type: "low-stock",
-        message: "Coffee Mug (CM-002) is running low. Current stock: 5 units",
-        productId: "2",
-        severity: "medium",
-        timestamp: "2024-01-15T10:30:00Z",
-      },
-      {
-        id: "2",
-        type: "out-of-stock",
-        message: "Notebook (NB-003) is out of stock",
-        productId: "3",
-        severity: "high",
-        timestamp: "2024-01-15T09:15:00Z",
-      },
-      {
-        id: "3",
-        type: "overstock",
-        message: "USB Cable (UC-004) is overstocked. Consider reducing orders",
-        productId: "4",
-        severity: "low",
-        timestamp: "2024-01-15T08:00:00Z",
-      },
-    ]
-
-    setInventory(sampleInventory)
-    setAlerts(sampleAlerts)
-  }, [])
-
-  const totalValue = inventory.reduce((sum, item) => sum + item.value, 0)
-  const totalItems = inventory.reduce((sum, item) => sum + item.currentStock, 0)
-  const lowStockItems = inventory.filter((item) => item.status === "low" || item.status === "critical").length
-  const categories = [...new Set(inventory.map((item) => item.category))]
+  const { inventory, alerts, summary, loading, dismissAlert, exportReport } = useInventory()
 
   const getStockPercentage = (current: number, min: number, max: number) => {
     return Math.min((current / max) * 100, 100)
@@ -149,38 +31,17 @@ export default function InventoryPage() {
     }
   }
 
-  const exportInventoryReport = () => {
-    const report = {
-      generatedAt: new Date().toISOString(),
-      summary: {
-        totalValue,
-        totalItems,
-        lowStockItems,
-        categories: categories.length,
-      },
-      inventory,
-      alerts,
-    }
-
-    const dataStr = JSON.stringify(report, null, 2)
-    const dataBlob = new Blob([dataStr], { type: "application/json" })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `inventory-report-${new Date().toISOString().split("T")[0]}.json`
-    link.click()
-
-    toast.success("Report Exported", {
-      description: "Inventory report has been downloaded successfully.",
-    })
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
   }
 
-  const dismissAlert = (alertId: string) => {
-    setAlerts(alerts.filter((alert) => alert.id !== alertId))
-    toast.success("Alert Dismissed", {
-      description: "The alert has been removed from your dashboard.",
-    })
-  }
+  const categories = [...new Set(inventory.map((item) => item.category))]
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -189,7 +50,7 @@ export default function InventoryPage() {
           <h1 className="text-3xl font-bold text-gray-900">Inventory Overview</h1>
           <p className="text-gray-600 mt-2">Monitor stock levels and manage your inventory</p>
         </div>
-        <Button onClick={exportInventoryReport}>
+        <Button onClick={exportReport}>
           <Download className="h-4 w-4 mr-2" />
           Export Report
         </Button>
@@ -203,7 +64,7 @@ export default function InventoryPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">${summary.totalValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Across all inventory</p>
           </CardContent>
         </Card>
@@ -213,7 +74,7 @@ export default function InventoryPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalItems.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{summary.totalItems.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Units in stock</p>
           </CardContent>
         </Card>
@@ -223,7 +84,7 @@ export default function InventoryPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{lowStockItems}</div>
+            <div className="text-2xl font-bold text-red-600">{summary.lowStockItems}</div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
@@ -233,7 +94,7 @@ export default function InventoryPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{categories.length}</div>
+            <div className="text-2xl font-bold">{summary.categories}</div>
             <p className="text-xs text-muted-foreground">Product categories</p>
           </CardContent>
         </Card>
@@ -378,7 +239,7 @@ export default function InventoryPage() {
                 <div className="space-y-4">
                   {["healthy", "low", "critical", "overstock"].map((status) => {
                     const count = inventory.filter((item) => item.status === status).length
-                    const percentage = (count / inventory.length) * 100
+                    const percentage = inventory.length > 0 ? (count / inventory.length) * 100 : 0
                     return (
                       <div key={status} className="flex items-center justify-between">
                         <span className="capitalize">{status}</span>
@@ -402,7 +263,7 @@ export default function InventoryPage() {
                   {categories.map((category) => {
                     const categoryItems = inventory.filter((item) => item.category === category)
                     const categoryValue = categoryItems.reduce((sum, item) => sum + item.value, 0)
-                    const percentage = (categoryValue / totalValue) * 100
+                    const percentage = summary.totalValue > 0 ? (categoryValue / summary.totalValue) * 100 : 0
                     return (
                       <div key={category} className="flex items-center justify-between">
                         <span>{category}</span>
