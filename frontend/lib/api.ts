@@ -57,34 +57,34 @@ export interface InventoryOverview {
   }
 }
 
-// Generic API call function - REMOVED CORS headers (they belong on backend)
-async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+// Generic API call function
+async function apiCall<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  expectBlob: boolean = false
+): Promise<ApiResponse<T>> {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: options.method || "GET",
+      ...options,
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        // Remove CORS headers - these should be set by your C++ backend
-        ...options.headers,
+        ...(options.headers || {}),
+        ...(expectBlob ? {} : { "Content-Type": "application/json", Accept: "application/json" }),
       },
-      // Keep these for proper CORS handling
       mode: "cors",
       credentials: "omit",
-      ...options,
     })
 
-    // Handle different response types
     const contentType = response.headers.get("content-type")
     let data: any
 
-    if (contentType && contentType.includes("application/json")) {
+    if (expectBlob) {
+      data = await response.blob()
+    } else if (contentType?.includes("application/json")) {
       data = await response.json()
-    } else if (contentType && contentType.includes("text/")) {
+    } else if (contentType?.includes("text/")) {
       const text = await response.text()
       data = { message: text }
     } else {
-      // For blob responses (file downloads)
       data = await response.blob()
     }
 
@@ -111,7 +111,6 @@ async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 // Product API functions
 export const productApi = {
-  // Get all products with optional filters
   getAll: async (params?: {
     search?: string
     category?: string
@@ -132,12 +131,10 @@ export const productApi = {
     return apiCall<Product[]>(`/products${query ? `?${query}` : ""}`)
   },
 
-  // Get single product
   getById: async (id: string) => {
     return apiCall<Product>(`/products/${id}`)
   },
 
-  // Add new product
   create: async (product: {
     name: string
     sku: string
@@ -154,7 +151,6 @@ export const productApi = {
     })
   },
 
-  // Update product
   update: async (id: string, product: Partial<Product>) => {
     return apiCall<Product>(`/products/${id}`, {
       method: "PUT",
@@ -162,29 +158,24 @@ export const productApi = {
     })
   },
 
-  // Delete product
   delete: async (id: string) => {
     return apiCall<{ message: string }>(`/products/${id}`, {
       method: "DELETE",
     })
   },
 
-  // Search products
   search: async (query: string) => {
     return apiCall<Product[]>(`/products/search?q=${encodeURIComponent(query)}`)
   },
 
-  // Scan barcode
   scanBarcode: async (barcode: string) => {
     return apiCall<Product>(`/products/scan/${barcode}`)
   },
 
-  // Get categories
   getCategories: async () => {
     return apiCall<string[]>("/products/categories")
   },
 
-  // Bulk import products
   importData: async (file: File) => {
     const formData = new FormData()
     formData.append("file", file)
@@ -197,41 +188,31 @@ export const productApi = {
     })
   },
 
-  // Export products
   exportData: async () => {
-    return apiCall<Blob>("/products/export", {
-      method: "GET",
-    })
+    return apiCall<Blob>("/products/export", { method: "GET" }, true)
   },
 }
 
 // Inventory API functions
 export const inventoryApi = {
-  // Get inventory overview
   getOverview: async () => {
     return apiCall<InventoryOverview>("/inventory")
   },
 
-  // Get alerts
   getAlerts: async () => {
     return apiCall<InventoryAlert[]>("/inventory/alerts")
   },
 
-  // Dismiss alert
   dismissAlert: async (alertId: string) => {
     return apiCall<{ message: string }>(`/inventory/alerts/${alertId}`, {
       method: "DELETE",
     })
   },
 
-  // Export inventory data
   exportData: async () => {
-    return apiCall<Blob>("/inventory/export", {
-      method: "POST",
-    })
+    return apiCall<Blob>("/inventory/export", { method: "POST" }, true)
   },
 
-  // Import inventory data
   importData: async (file: File) => {
     const formData = new FormData()
     formData.append("file", file)
@@ -244,7 +225,6 @@ export const inventoryApi = {
     })
   },
 
-  // Update stock levels
   updateStock: async (productId: string, quantity: number, operation: "add" | "subtract" | "set") => {
     return apiCall<InventoryItem>(`/inventory/stock/${productId}`, {
       method: "PATCH",
@@ -252,12 +232,10 @@ export const inventoryApi = {
     })
   },
 
-  // Get low stock items
   getLowStock: async () => {
     return apiCall<Product[]>("/inventory/low-stock")
   },
 
-  // Get out of stock items
   getOutOfStock: async () => {
     return apiCall<Product[]>("/inventory/out-of-stock")
   },

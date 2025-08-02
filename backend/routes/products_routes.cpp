@@ -15,6 +15,16 @@ void setupProductRoutes(App& app) {
         return addProduct(req);
     });
 
+    // POST /api/products/import - Import products CSV file
+    CROW_ROUTE(app, "/api/products/import").methods("POST"_method)([](const crow::request& req) {
+        return importProducts(req);
+    });
+
+    // GET /api/products/export - Export products data as CSV
+    CROW_ROUTE(app, "/api/products/export").methods("GET"_method)([]() {
+        return exportProducts();
+    });
+
     // GET /api/products/<string> - Get single product by ID (string UUID)
     CROW_ROUTE(app, "/api/products/<string>").methods("GET"_method)([](const crow::request& req, const std::string& id) {
         return getProductById(req, id);
@@ -31,10 +41,6 @@ void setupProductRoutes(App& app) {
         return crow::response{result};
     });
 
-    CROW_ROUTE(app, "/api/products/categories").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
-        res.code = 204;
-        res.end();
-    });
 
     // PUT /api/products/<string> - Update product by ID
     CROW_ROUTE(app, "/api/products/<string>").methods("PUT"_method)([](const crow::request& req, const std::string& id) {
@@ -57,6 +63,7 @@ void setupProductRoutes(App& app) {
         return crow::response{json};
     });
 
+
     // GET /api/products/scan?barcode=... - Scan product by barcode
     CROW_ROUTE(app, "/api/products/scan").methods("GET"_method)([](const crow::request& req) {
         return scanProductByBarcode(req);
@@ -65,6 +72,11 @@ void setupProductRoutes(App& app) {
     // OPTIONS handlers for CORS preflight
 
     CROW_ROUTE(app, "/api/products").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
+        res.code = 204;
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/api/products/categories").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
         res.code = 204;
         res.end();
     });
@@ -80,6 +92,18 @@ void setupProductRoutes(App& app) {
     });
 
     CROW_ROUTE(app, "/api/products/scan").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
+        res.code = 204;
+        res.end();
+    });
+
+    // OPTIONS handler for preflight CORS
+    CROW_ROUTE(app, "/api/products/import").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
+        res.code = 204;
+        res.end();
+    });
+
+    // OPTIONS handler for CORS preflight
+    CROW_ROUTE(app, "/api/products/export").methods("OPTIONS"_method)([](const crow::request&, crow::response& res) {
         res.code = 204;
         res.end();
     });

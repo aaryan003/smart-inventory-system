@@ -1,0 +1,6 @@
+id,name,sku,barcode,category,stock,threshold,price,status
+"0dc8aac9-0594-4654-91ed-ed1320c8af1f","iPhone 16","TSH-RED-LG","12345678","Electronics",10,5,62300,"in-stock"
+"9458142c-1191-4926-8dc2-5b2308e7e858","Side Table","ADS-RED-IJH","123321","Furniture",2,5,3000,"in-stock"
+"3780e261-7d23-44ad-b207-96f78885ae7e","Laptop","SKU123","BAR123","Electronics",5,2,999.99,"in-stock"
+"54b94ac8-0915-48fd-b1f7-47d195f0f1b0","Mouse","SKU456","BAR456","Accessories",10,3,29.99,"out-of-stock"
+"82707412-d853-43b0-99c4-068f4fa07728","Keyboard","SKU789","BAR789","Accessories",8,2,49.99,"in-stock"

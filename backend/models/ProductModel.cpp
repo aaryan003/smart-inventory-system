@@ -6,7 +6,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-static std::string statusToString(ProductStatus status) {
+std::string statusToString(ProductStatus status) {
     switch (status) {
         case ProductStatus::IN_STOCK: return "in-stock";
         case ProductStatus::LOW_STOCK: return "low-stock";
@@ -15,7 +15,7 @@ static std::string statusToString(ProductStatus status) {
     }
 }
 
-static ProductStatus stringToStatus(const std::string& statusStr) {
+ProductStatus stringToStatus(const std::string& statusStr) {
     return parseStatus(statusStr);
 }
 
@@ -316,4 +316,5 @@ std::vector<std::string> getAllCategoriesFromDB() {
     sqlite3_finalize(stmt);
     return categories;
 }
+
 

@@ -1,0 +1,3 @@
+id,name,sku,barcode,category,stock,threshold,price,status
+,Laptop,SKU123,BAR123,Electronics,5,2,999.99,in-stock
+,Mouse,SKU456,BAR456,Accessories,10,3,29.99,out-of-stock

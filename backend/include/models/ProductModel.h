@@ -68,4 +68,6 @@ bool updateProductInDB(
 
 bool deleteProductFromDB(const std::string& id);
 std::vector<std::string> getAllCategoriesFromDB();
+std::string statusToString(ProductStatus status);
+
 
